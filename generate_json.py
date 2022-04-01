@@ -110,7 +110,7 @@ def get_doc_dict(file_path, access_hash):
     # enumeration, boolean, reference
     xpath_types = ' or '.join([f"@type='{x}'" for x in ['enumeration', 'boolean', 'reference']])
     for item in root.xpath(f"//itemslist[@name][{xpath_types}]"):
-        list_items = root.xpath(f"//itemslist[@name][{xpath_types}][@title='{item.get('title')}']/item")
+        list_items = item.xpath(f"./item")
         if len(list_items) > 0:
             body[item.values()[0]] = {
                 "verbose": item.get('title'),
@@ -120,7 +120,7 @@ def get_doc_dict(file_path, access_hash):
 
     # structures
     for item in root.xpath(f"//itemslist[@name][@type='structure']"):
-        list_items = root.xpath(f"//itemslist[@name][@type='structure'][@title='{item.get('title')}']/item")
+        list_items = item.xpath(f"./item")
         if len(list_items) > 0:
             body[item.values()[0]] = {
                 "verbose": item.get('title'),
@@ -130,20 +130,74 @@ def get_doc_dict(file_path, access_hash):
                 "type": item.get('type')
             }
 
-        # document links
-        for item in root.xpath(f"//itemslist[@name][@type='document']"):
-            list_items = root.xpath(f"//itemslist[@name][@type='document'][@title='{item.get('title')}']/item")
-            if len(list_items) > 0:
-                body[item.values()[0]] = {
-                    "verbose": item.get('title'),
-                    "value": [
-                        {
-                            'title': x.text,
-                            'uid': x.get('id')
-                        }for x in list_items
-                    ],
-                    "type": item.get('type')
-                }
+    # document links
+    for item in root.xpath(f"//itemslist[@name][@type='document']"):
+        list_items = item.xpath(f"./item")
+        if len(list_items) > 0:
+            body[item.values()[0]] = {
+                "verbose": item.get('title'),
+                "value": [
+                    {
+                        'title': x.text,
+                        'uid': x.get('id')
+                    }for x in list_items
+                ],
+                "type": item.get('type')
+            }
+
+    # Match list
+    for item in root.xpath(f"//itemslist[@name][@type='table']"):
+        rows = item.xpath(f"./itemslist")
+        if len(rows) > 0:
+
+            body[item.values()[0]] = {
+                "verbose": item.get('title'),
+                "value": [
+                    {
+                        'row': x.get('row'),
+                        'approvers': [
+                            y.text for y in x.xpath(
+                                f"./itemslist[@type='structure']/item")
+                        ]
+                    } for x in rows
+                ],
+                "type": item.get('type')
+            }
+
+    # Decision List
+    body['decision_list'] = []
+    for decision in root.xpath(f"//decision"):
+        decision_dict = {
+            'verbose': decision.get('title'),
+            'files': []
+        }
+
+        decision_body = {}
+        # Common items
+        for item in decision.xpath(f"./item"):
+            if item.text:
+                val = None
+                if item.get('name') in ['tstamp']:
+                    val = item.text.strip().replace(' ', 'T') + '+00:00'
+                else:
+                    val = item.text.strip()
+                if val:
+                    decision_body[item.get('name')] = val
+        # Lists
+        for itemslist in decision.xpath(f"./itemslist"):
+            items = itemslist.xpath(f"./item")
+            if len(items) > 0:
+                decision_body[itemslist.get('name')] = [x.text for x in items]
+        # Files
+        attachments = decision.xpath("./itemslist[@name='files']/item")
+        for f in attachments:
+            uploaded_file_id = upload_file(access_hash, f.text, f.get('id'))
+            if uploaded_file_id:
+                decision_dict['files'].append(uploaded_file_id)
+
+        decision_dict['body'] = decision_body
+
+        body['decision_list'].append(decision_dict)
 
     json_document['fields']['body'] = body
 
@@ -160,8 +214,8 @@ def main():
             for month in listdir(f'{DIR}/{year}'):
                 for file in listdir(f'{DIR}/{year}/{month}'):
                     # Stoppers
-                    if doc_num >= 500:
-                        break
+                    # if doc_num >= 200:
+                    #     break
                     
                     file_path = f'{DIR}/{year}/{month}/{file}'
 
