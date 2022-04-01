@@ -3,3 +3,5 @@
 /xml/
 /dump.json
 /.idea
+/config.py
+/__pycache__
