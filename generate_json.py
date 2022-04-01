@@ -66,7 +66,7 @@ def upload_file(access_hash, obj_name, file_id):
 def get_doc_dict(file_path, access_hash):
     # Basic dict
     json_document = {
-        'model': 'documentolog.commonmail',
+        'model': 'documentolog.documentologmail',
         'fields': {
             'organization': cfg.ORGANIZATION,
             'created_at': datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S%Z'),
