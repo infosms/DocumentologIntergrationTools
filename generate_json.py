@@ -9,7 +9,14 @@ import config as cfg
 
 # DIR = '/home/khandosaly/job/DocumentologIntegrationTools/xml/026f7078-c203-4452-a072-5289f067005c'
 DIR = cfg.DIR
-
+DAYS = [
+    str(a) + str(b) if a > 10 and b > 10 \
+    else '0' + str(a) + str(b) if a < 10 and b > 9 \
+    else str(a) + '0' + str(b) if a > 9 and b < 10 \
+    else '0' + str(a) + '0' + str(b) if a < 10 and b <10 \
+    else str(a) + str(b)
+    for a in range(1, 13) for b in range(1, 32)
+]
 
 def get_access_hash():
     payload = json.dumps({
@@ -33,17 +40,19 @@ def get_access_hash():
 
 def upload_file(access_hash, obj_name, file_id):
     files = None
-    for dir_day in listdir(cfg.FILES_LOCATION):
-        try:
-            files = {
-                'files':
-                    (
-                        obj_name.rsplit('(', 1)[0].strip(),
-                        open(cfg.FILES_LOCATION+dir_day+'/'+file_id, 'rb')
-                    )
-            }
-        except (FileNotFoundError, OSError):
-            pass
+    for year in range(2012, 2022):
+        for dir_day in DAYS:
+            try:
+                print(cfg.FILES_LOCATION + str(year) + '/' + dir_day + '/' + file_id, 'rb')
+                files = {
+                    'files':
+                        (
+                            obj_name.rsplit('(', 1)[0].strip(),
+                            open(cfg.FILES_LOCATION + str(year) + '/' + dir_day + '/' + file_id, 'rb')
+                        )
+                }
+            except (FileNotFoundError, OSError):
+                pass
 
     if not files:
         return None
@@ -97,8 +106,8 @@ def get_doc_dict(file_path, access_hash):
             if item.get('type') in ['string', 'text', 'date']:
                 val = item.text.strip()
             elif item.get('type') in ['timestamp']:
-                #2021-10-19 10:48:00
-                #2013-03-18T13:19:37+00:00
+                # 2021-10-19 10:48:00
+                # 2013-03-18T13:19:37+00:00
                 val = item.text.strip().replace(' ', 'T') + '+00:00'
             if val:
                 body[item.values()[0]] = {
@@ -140,7 +149,7 @@ def get_doc_dict(file_path, access_hash):
                     {
                         'title': x.text,
                         'uid': x.get('id')
-                    }for x in list_items
+                    } for x in list_items
                 ],
                 "type": item.get('type')
             }
@@ -149,7 +158,6 @@ def get_doc_dict(file_path, access_hash):
     for item in root.xpath(f"//itemslist[@name][@type='table']"):
         rows = item.xpath(f"./itemslist")
         if len(rows) > 0:
-
             body[item.values()[0]] = {
                 "verbose": item.get('title'),
                 "value": [
@@ -216,7 +224,7 @@ def main():
                     # Stoppers
                     # if doc_num >= 200:
                     #     break
-                    
+
                     file_path = f'{DIR}/{year}/{month}/{file}'
 
                     try:
