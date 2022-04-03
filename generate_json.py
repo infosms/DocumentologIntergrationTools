@@ -222,6 +222,8 @@ def main():
     docs = []
     try:
         for year in listdir(DIR):
+            if year != "2021":
+                continue
             for month in listdir(f'{DIR}/{year}'):
                 for file in listdir(f'{DIR}/{year}/{month}'):
                     # Stoppers
@@ -235,7 +237,8 @@ def main():
                     except Exception as e:
                         errors += 1
 
-                    print('\r', f'Preparing documents: {doc_num} [{errors} errors]', end='')
+                    print('\r', f'Preparing documents ({month}.{year}) : {doc_num} / '
+                                f'{len(listdir(f"{DIR}/{year}/{month}"))}[{errors} errors]', end='')
                     doc_num += 1
 
     except KeyboardInterrupt:
