@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 import json
 import warnings
@@ -47,7 +48,7 @@ def upload_file(access_hash, obj_name, file_id):
                 files = {
                     'files':
                         (
-                            obj_name.rsplit('(', 1)[0].strip(),
+                            obj_name.rsplit('(', 1)[0].strip() if 'Б)' in obj_name else obj_name.strip(),
                             open(cfg.FILES_LOCATION + str(year) + '/' + dir_day + '/' + file_id, 'rb')
                         )
                 }
@@ -224,7 +225,7 @@ def main():
             for month in listdir(f'{DIR}/{year}'):
                 for file in listdir(f'{DIR}/{year}/{month}'):
                     # Stoppers
-                    # if doc_num >= 200:
+                    # if doc_num >= 5:
                     #     break
 
                     file_path = f'{DIR}/{year}/{month}/{file}'

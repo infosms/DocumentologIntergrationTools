@@ -2,6 +2,7 @@ FROM python:3.8.3-slim-buster
 
 RUN apt-get update && apt-get -y install libpq-dev gcc
 RUN apt-get install -y vim
+RUN apt-get install -y curl
 WORKDIR /usr/src/app
 
 # install dependencies
