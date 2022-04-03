@@ -18,6 +18,7 @@ DAYS = [
     for a in range(1, 13) for b in range(1, 32)
 ]
 
+
 def get_access_hash():
     payload = json.dumps({
         'email': cfg.AUTH_EMAIL,
@@ -43,7 +44,6 @@ def upload_file(access_hash, obj_name, file_id):
     for year in range(2012, 2022):
         for dir_day in DAYS:
             try:
-                print(cfg.FILES_LOCATION + str(year) + '/' + dir_day + '/' + file_id, 'rb')
                 files = {
                     'files':
                         (
@@ -109,6 +109,8 @@ def get_doc_dict(file_path, access_hash):
                 # 2021-10-19 10:48:00
                 # 2013-03-18T13:19:37+00:00
                 val = item.text.strip().replace(' ', 'T') + '+00:00'
+                if item.get('name') == 'created_at':
+                    json_document['fields']['created_at'] = val
             if val:
                 body[item.values()[0]] = {
                     "verbose": item.get('title'),
@@ -231,7 +233,6 @@ def main():
                         docs.append(get_doc_dict(file_path, access_hash))
                     except Exception as e:
                         errors += 1
-                        print(e)
 
                     print('\r', f'Preparing documents: {doc_num} [{errors} errors]', end='')
                     doc_num += 1
