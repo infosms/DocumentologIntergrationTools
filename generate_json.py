@@ -3,7 +3,7 @@ import datetime
 import json
 import warnings
 from os import listdir
-
+from threading import Thread
 import requests
 from lxml import etree
 import config as cfg
@@ -215,34 +215,42 @@ def get_doc_dict(file_path, access_hash):
     return json_document
 
 
-def main():
-    access_hash = get_access_hash()
+def upload_month(access_hash, year, month, docs):
     doc_num = 1
     errors = 0
+    for file in listdir(f'{DIR}/{year}/{month}'):
+        # Stoppers
+        # if doc_num >= 5:
+        #     break
+
+        file_path = f'{DIR}/{year}/{month}/{file}'
+
+        try:
+            docs.append(get_doc_dict(file_path, access_hash))
+        except Exception as e:
+            errors += 1
+
+        print(f'({month}-{year}): {doc_num}/{len(listdir(f"{DIR}/{year}/{month}"))} [{errors} errors]')
+        doc_num += 1
+
+
+def main():
+    threads = []
     docs = []
+    access_hash = get_access_hash()
     try:
         for year in listdir(DIR):
             if year != "2021":
                 continue
             for month in listdir(f'{DIR}/{year}'):
-                for file in listdir(f'{DIR}/{year}/{month}'):
-                    # Stoppers
-                    # if doc_num >= 5:
-                    #     break
-
-                    file_path = f'{DIR}/{year}/{month}/{file}'
-
-                    try:
-                        docs.append(get_doc_dict(file_path, access_hash))
-                    except Exception as e:
-                        errors += 1
-
-                    print('\r', f'Preparing documents ({month}.{year}) : {doc_num} / '
-                                f'{len(listdir(f"{DIR}/{year}/{month}"))}[{errors} errors]', end='')
-                    doc_num += 1
-
+                th = Thread(target=upload_month, args=(access_hash, year, month, docs))
+                threads.append(th)
+                th.start()
     except KeyboardInterrupt:
         pass
+
+    for th in threads:
+        th.join()
 
     with open(f'dump.json', 'w+', encoding='utf8') as outfile:
         json.dump(docs, outfile, ensure_ascii=False)
