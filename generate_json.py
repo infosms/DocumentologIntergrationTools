@@ -215,14 +215,20 @@ def get_doc_dict(file_path, access_hash):
     return json_document
 
 
-def upload_month(access_hash, year, month):
+def upload_month(year, month):
     docs = []
     doc_num = 1
     errors = 0
+
+    access_hash = get_access_hash()
+
     for file in listdir(f'{DIR}/{year}/{month}'):
         # Stoppers
         # if doc_num >= 5:
         #     break
+
+        if doc_num % 1000 == 0:
+            access_hash = get_access_hash()
 
         file_path = f'{DIR}/{year}/{month}/{file}'
 
@@ -238,12 +244,11 @@ def upload_month(access_hash, year, month):
 
 
 def main():
-    access_hash = get_access_hash()
     for year in listdir(DIR):
         if year != str(cfg.YEAR):
             continue
         for month in listdir(f'{DIR}/{year}'):
-            th = Thread(target=upload_month, args=(access_hash, year, month))
+            th = Thread(target=upload_month, args=(year, month))
             th.start()
 
 
