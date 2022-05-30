@@ -36,13 +36,13 @@ def get_access_hash():
     if response.status_code == 200:
         return json.loads(response.text).get('access')
     else:
-        print('[ERROR] Can not get access hash!')
+        print('[ERROR] Can not get access hash! ', response.text)
         raise SystemExit(0)
 
 
 def upload_file(access_hash, obj_name, file_id):
     files = None
-    for year in range(2012, 2022):
+    for year in range(2012, 2023):
         for dir_day in DAYS:
             try:
                 files = {
